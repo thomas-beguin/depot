@@ -1,6 +1,6 @@
 class LineItemsController < ApplicationController
   include CurrentCart
-  before_action :set_cart, only: %i[create]
+  before_action :set_cart, only: %i[create destroy]
   before_action :set_line_item, only: %i[ show edit update destroy ]
 
   # GET /line_items or /line_items.json
@@ -53,10 +53,15 @@ class LineItemsController < ApplicationController
 
   # DELETE /line_items/1 or /line_items/1.json
   def destroy
-    @line_item.destroy
+    if @line_item.quantity > 1
+      @line_item.update_attribute(:quantity, @line_item.quantity - 1)
+    else
+      @line_item.destroy
+    end
 
     respond_to do |format|
-      format.html { redirect_to line_items_url, notice: "Line item was successfully destroyed." }
+      format.turbo_stream { @current_item = @line_item }
+      format.html { redirect_to store_index_url, notice: "Line item was successfully destroyed." }
       format.json { head :no_content }
     end
   end
